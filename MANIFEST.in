@@ -1,6 +1,0 @@
-include *.py
-include *.sql
-include *.txt
-include test/*.csv
-include test/*.py
-
