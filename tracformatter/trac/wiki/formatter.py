@@ -626,7 +626,7 @@ class Formatter(object):
 
     def _image_formatter(self, match, fullmatch):
         imagefn = fullmatch.group('imagefn').split(",", 1)[0].strip()
-        return u"![{0}](../tracattachments/{1}/{0})"\
+        return u"![{0}](tracattachments/{1}/{0})"\
             .format(imagefn, currentwiki)
 
     def _svn_rev(self, match, revision):
