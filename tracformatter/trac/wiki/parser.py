@@ -51,9 +51,6 @@ from trac.notification import EMAIL_LOOKALIKE_PATTERN
     'strike',      # works without ~~
     'subscript',
     'superscript',
-    'table_cell',
-      'table_cell_last',
-      'table_cell_sep',
     'table_row_sep',
       'table_row_params',
     'underline',
@@ -77,6 +74,12 @@ GITHUB_CONVERTED = set([
     'lhref',    
     'shref',
     'shrefbr',
+    'wikitag',
+    'table_cell',
+    'table_cell_last',
+    'table_cell_sep',
+    'toc',
+    'image',
 ])
 #helpers:
 """
@@ -155,6 +158,7 @@ class WikiParser(Component):
            % (STARTBLOCK_TOKEN, ENDBLOCK_TOKEN),
         r"(?P<inlinecode2>!?%s(?P<inline2>.*?)%s)" \
            % (INLINE_TOKEN, INLINE_TOKEN),
+        r"(?P<wikitag>\[wiki:(?P<wikilinktitle>[^\]]+)\])",
         ]
 
     # Rules provided by IWikiSyntaxProviders will be inserted here
@@ -164,6 +168,10 @@ class WikiParser(Component):
         r"(?P<linebreak_wc>!?\\\\)", 
         # [[BR]]  (kb added)
         r"(?P<br>!?\[\[[Bb][Rr]\]\])",
+        # [[TOC]]  (kb added, to remove)
+        r"(?P<toc>!?\[\[TOC\]\])",
+        # [[Image]]  (kb added)
+        r"(?P<image>!?\[\[Image\((?P<imagefn>[^\)]+)\)\]\])",
         # e-mails
         r"(?P<email>!?%s)" % EMAIL_LOOKALIKE_PATTERN,
         # <wiki:Trac bracket links>
@@ -205,7 +213,7 @@ class WikiParser(Component):
         r"(?P<indent>^(?P<idepth>\s+)(?=\S))",
         # || table ||
         r"(?P<table_cell>!?(?P<table_cell_sep>=?(?:\|\|)+=?)"
-        r"(?P<table_cell_last>\s*\\?$)?)",
+            r"(?P<table_cell_last>\s*\\?$)?)",
         
         #For GitHub kb
         r"(?P<revision>!?\br(?P<rev>[0-9]+)\b)",
@@ -266,10 +274,12 @@ class WikiParser(Component):
     def _prepare_rules(self):
         from trac.wiki.api import WikiSystem
         if not self._compiled_rules:
+            from trac.wiki.formatter import wiki_titles
             helper_re = re.compile(r'\?P<([a-z\d_]+)>')
             helpers = []
             handlers = {}
             syntax = [r for r in self._pre_rules if helper_re.search(r).group(1) in GITHUB_CONVERTED]
+            syntax.append(r"(?P<wiki_title>!?\b(?:" + '|'.join(wiki_titles) + r")\b)")
             i = 0
             for resolver in WikiSystem(self.env).syntax_providers:
                 for regexp, handler in resolver.get_wiki_syntax() or []:

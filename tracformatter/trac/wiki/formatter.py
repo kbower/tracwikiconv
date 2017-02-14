@@ -43,15 +43,18 @@ __all__ = ['trac_to_github']
 
 
 _gitpath=None
-_currentticket=None
+wiki_titles=None
+currentwiki=None
 
-def trac_to_github(text, gitpath=None, currentticket=None):
+def trac_to_github(text, currentwikiname, wikinames, gitpath=None):
     global _gitpath
-    global _currentticket
     if gitpath:
         _gitpath = gitpath
-    if currentticket is not None:
-        _currentticket = currentticket
+    global wiki_titles
+    if wikinames:
+        wiki_titles = wikinames
+    global currentwiki
+    currentwiki = currentwikiname
     out = StringIO()
     Formatter().format(text, out, False)
     return out.getvalue()
@@ -579,18 +582,19 @@ class Formatter(object):
         # [[BR]]
         return os.linesep
 
+    def _toc_formatter(self, match, fullmatch):
+        # [[TOC]]
+        return ''
+
     def _ticketref_formatter(self, match, fullmatch):
         """ #123 """
         return self._ticketref(match, long(fullmatch.group('ticketid')))
 
     def _ticketref(self, match, ticketid):
-        if not _currentticket or ticketid <= _currentticket:
-            # As-is and allow github to link
-            return u"#%d" % ticketid
         # ticketid hasn't been created yet and so github
         # will not create link to it, even after it has been, so
         # manually link:
-        return u"[%s](%d)" % (match, ticketid)
+        return u"[%s](../issues/%d)" % (match, ticketid)
 
     def _revision_formatter(self, match, fullmatch):
         return self._svn_rev(match, fullmatch.group('rev'))
@@ -598,11 +602,40 @@ class Formatter(object):
     def _revision2_formatter(self, match, fullmatch):
         return self._svn_rev(match, fullmatch.group('rev2'))
 
+    def _wiki_title_formatter(self, match, fullmatch):
+        return self._wikilink(match)
+
+    def _wikitag_formatter(self, match, fullmatch):
+        title = fullmatch.group('wikilinktitle')
+        if ' ' in title:
+            title, text = title.split(' ', 1)
+        else:
+            text = None
+        title = title.split('/')[-1]
+        return self._wikilink(title, text)
+
+    def _wikilink(self, wikititle, text=None):
+        if wikititle in ('PasswordDatabase',):
+            if not text:
+                text = wikititle
+            return u"[%s](https://trac.retailarchitects.com/trac/wiki/%s)" % \
+                (text, wikititle)
+        if text:
+            return u"[[%s|%s]]" % (text, wikititle)
+        return u"[[%s]]" % wikititle
+
+    def _image_formatter(self, match, fullmatch):
+        imagefn = fullmatch.group('imagefn').split(",", 1)[0].strip()
+        return u"![{0}](../tracattachments/{1}/{0})"\
+            .format(imagefn, currentwiki)
+
     def _svn_rev(self, match, revision):
         if _gitpath:
             git_commit = self.git_commit_from_svn_rev(revision)
             if git_commit:
                 # [r1233](../commit/1458f373a79e332c7ad81caa3ea3b6a63f588be1)
+                if match[0] == '[' and match[-1] == ']':
+                    match = match[1:-1]
                 return u"[%s](../commit/%s)" % (match, git_commit)
         return match
 
@@ -1188,9 +1221,14 @@ class Formatter(object):
                 textalign = 'center'                
         if textalign:
             attrs += ' style="text-align: %s"' % textalign
-        td = '<%s%s>' % (cell, attrs)
+        #td = '<%s%s>' % (cell, attrs)
         if self.in_table_cell:
-            td = '</%s>' % self.in_table_cell + td
+            #td = '</%s>' % self.in_table_cell + td
+            td = "|"
+            if self.in_table_first_line:
+                self.in_table_first_line += 1
+        else:
+            td = ''
         self.in_table_cell = cell
         return td
 
@@ -1212,28 +1250,35 @@ class Formatter(object):
             self.close_list()
             self.close_def_list()
             self.in_table = 1
-            self.out.write('<table class="wiki">' + os.linesep)
+            self.in_table_first_line = 1
+            #self.out.write('<table class="wiki">' + os.linesep)
 
     def open_table_row(self, params=''):
         if not self.in_table_row:
             self.open_table()
             self.in_table_row = 1
-            self.out.write('<tr%s>' % params)
+            #self.out.write('<tr%s>' % params)
 
     def close_table_row(self, force=False):
         if self.in_table_row and (not self.continue_table_row or force):
             self.in_table_row = 0
             if self.in_table_cell:
-                self.out.write('</%s>' % self.in_table_cell)
+                #self.out.write('</%s>' % self.in_table_cell)
                 self.in_table_cell = ''
-            self.out.write('</tr>')
+            #self.out.write('</tr>')
+            if self.in_table_first_line:
+                # markdown table
+                self.out.write("|".join(("----",)*self.in_table_first_line) 
+                    + os.linesep)
         self.continue_table_row = 0
+        self.in_table_first_line = 0
 
     def close_table(self):
         if self.in_table:
             self.close_table_row(force=True)
-            self.out.write('</table>' + os.linesep)
+            #self.out.write('</table>' + os.linesep)
             self.in_table = 0
+            self.in_table_first_line = 0
 
     # Paragraphs
 
@@ -1359,6 +1404,7 @@ class Formatter(object):
         self.in_table = 0
         self.in_def_list = 0
         self.in_table_row = 0
+        self.in_table_first_line = 0
         self.continue_table = 0
         self.continue_table_row = 0
         self.in_table_cell = ''
