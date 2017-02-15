@@ -1019,9 +1019,7 @@ class Formatter(object):
         self.close_indentation()
         self.close_list()
         self.close_def_list()
-        if not self.closed_prev_section:
-            self.out.write(os.linesep)
-            self.closed_prev_section = True
+        self.close_prev_section()
         depth, heading, anchor = self._parse_heading(match, fullmatch, False)
         if anchor:
             anchor = u' <a name="%s"></a>' % anchor
@@ -1139,6 +1137,11 @@ class Formatter(object):
         if self.in_def_list:
             self.out.write('</dd></dl>\n')
         self.in_def_list = False
+
+    def close_prev_section(self):
+        if not self.closed_prev_section:
+            self.out.write(os.linesep)
+            self.closed_prev_section = True
 
     # Blockquote
 
@@ -1283,6 +1286,7 @@ class Formatter(object):
             self.close_paragraph()
             self.close_list()
             self.close_def_list()
+            self.close_prev_section()
             self.in_table = 1
             self.in_table_first_line = 1
             #self.out.write('<table class="wiki">' + os.linesep)
