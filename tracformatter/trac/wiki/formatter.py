@@ -1019,6 +1019,9 @@ class Formatter(object):
         self.close_indentation()
         self.close_list()
         self.close_def_list()
+        if not self.closed_prev_section:
+            self.out.write(os.linesep)
+            self.closed_prev_section = True
         depth, heading, anchor = self._parse_heading(match, fullmatch, False)
         if anchor:
             anchor = u' <a name="%s"></a>' % anchor
@@ -1447,7 +1450,7 @@ class Formatter(object):
         text = self.reset(text, out)
         if isinstance(text, basestring):
             text = text.splitlines()
-            
+        self.closed_prev_section = True
         for line in text:
             # Detect start of code block (new block or embedded block)
             block_start_match = None
@@ -1484,7 +1487,8 @@ class Formatter(object):
                 self.close_indentation()
                 self.close_list()
                 self.close_def_list()
-                self.out.write(os.linesep)                
+                self.out.write(os.linesep)
+                self.closed_prev_section = True
                 continue
 
             # Tab expansion and clear tabstops if no indent
@@ -1497,6 +1501,8 @@ class Formatter(object):
             # Throw a bunch of regexps on the problem
             self.line = line
             result = re.sub(self.wikiparser.rules, self.replace, line)
+
+            self.closed_prev_section = False
 
             if not self.in_list_item:
                 self.close_list()
