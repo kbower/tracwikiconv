@@ -48,10 +48,11 @@ def add_attachments_section(wikititle, shortname, page):
         return "\n### Attachments\n" + "\n".join(attachments)
     return ''
 
-stmt = select([distinct(wiki_table.c.name)]).where(wiki_table.c.author != 'trac')
+stmt = select([distinct(wiki_table.c.name)])\
+    .where(wiki_table.c.author != 'trac')
 
 wikinames = set(r.name for r in engine.execute(stmt).fetchall())
-wikishortnames = [n.split('/')[-1] for n in wikinames]
+wikishortnames = [n.split('/')[-1] for n in wikinames if n not in ('Loft',)]
 
 for wikititle in sorted(wikinames - SKIP):
     print "loading %s" % wikititle
