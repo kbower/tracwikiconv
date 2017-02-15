@@ -184,18 +184,18 @@ class WikiParser(Component):
                SHREF_TARGET_FIRST, SHREF_TARGET_MIDDLE, SHREF_TARGET_LAST),
         # [wiki:TracLinks with optional label] or [/relative label]
         (r"(?P<lhref>!?\[(?:"
-         r"(?P<rel>%s)|" % LHREF_RELATIVE_TARGET + # ./... or /...
-         r"(?P<lns>%s):(?P<ltgt>%s:(?:%s)|%s|[^\]\s]*))" % \
-         (LINK_SCHEME, LINK_SCHEME, QUOTED_STRING, QUOTED_STRING) +
-         # wiki:TracLinks or wiki:"trac links" or intertrac:wiki:"trac links"
-         r"(?:\s+(?P<label>%s|[^\]]+))?\])" % QUOTED_STRING), # optional label
+             r"(?P<rel>%s)|" % LHREF_RELATIVE_TARGET + # ./... or /...
+             r"(?P<lns>%s):(?P<ltgt>%s:(?:%s)|%s|[^\]\s]*))" % \
+             (LINK_SCHEME, LINK_SCHEME, QUOTED_STRING, QUOTED_STRING) +
+             # wiki:TracLinks or wiki:"trac links" or intertrac:wiki:"trac links"
+             r"(?:\s+(?P<label>%s|[^\]]+))?\])" % QUOTED_STRING), # optional label
         # [=#anchor] creation
         r"(?P<anchor>!?\[%s\])" % _set_anchor(XML_NAME, r'\s+'),
         # [[macro]] call or [[WikiCreole link]]
         (r"(?P<macrolink>!?\[\[(?:[^]]|][^]])+\]\])"),
         # == heading == #hanchor
         r"(?P<heading>^\s*(?P<hdepth>={1,6})\s(?P<htext>.*?)"
-        r"(?P<hanchor>#%s)?\s*$)" % XML_NAME,
+            r"(?P<hanchor>#%s)?\s*$)" % XML_NAME,
         #  * list
         r"(?P<list>^(?P<ldepth>\s*)"
         ur"(?:[%s]|(?P<lstart>[0-9]+|[a-zA-Z]|[ivxIVX]{1,5})\.)\s)"

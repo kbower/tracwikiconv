@@ -757,8 +757,7 @@ class Formatter(object):
 
     def _trac_link(self, match, target, ns):
         if ns == 'wiki':
-            return u"[%s](%s)" % (target,
-                "https://trac.retailarchitects.com/trac/wiki/%s" % target)
+            return self._wikilink(target)
         if ns == 'ticket':
             # ticket:123
             try:
@@ -973,18 +972,18 @@ class Formatter(object):
         heading = format_to_oneliner(self.env, None, htext, False)
         if anchor:
             anchor = anchor[1:]
-        else:
-            sans_markup = plaintext(heading, keeplinebreaks=False)
-            anchor = WikiParser._anchor_re.sub('', sans_markup)
-            if not anchor or anchor[0].isdigit() or anchor[0] in '.-':
+#        else:
+#            sans_markup = plaintext(heading, keeplinebreaks=False)
+#            anchor = WikiParser._anchor_re.sub('', sans_markup)
+#            if not anchor or anchor[0].isdigit() or anchor[0] in '.-':
                 # an ID must start with a Name-start character in XHTML
-                anchor = 'a' + anchor # keeping 'a' for backward compat
-        i = 1
-        anchor_base = anchor
-        while anchor in self._anchors:
-            anchor = anchor_base + str(i)
-            i += 1
-        self._anchors[anchor] = True
+#                anchor = 'a' + anchor # keeping 'a' for backward compat
+#        i = 1
+#        anchor_base = anchor
+#        while anchor in self._anchors:
+#            anchor = anchor_base + str(i)
+#            i += 1
+#        self._anchors[anchor] = True
         if shorten:
             heading = format_to_oneliner(self.env, None, htext, True)
         return (depth, heading, anchor)
@@ -996,7 +995,11 @@ class Formatter(object):
         self.close_list()
         self.close_def_list()
         depth, heading, anchor = self._parse_heading(match, fullmatch, False)
-        return u"#"*depth + u" " + heading
+        if anchor:
+            anchor = u' <a name="%s"></a>' % anchor
+        else:
+            anchor = u''
+        return u"#"*depth + anchor + u" " + _markup_to_unicode(heading)
 
     # Generic indentation (as defined by lists and quotes)
 
