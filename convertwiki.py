@@ -55,6 +55,7 @@ wikinames = set(r.name for r in engine.execute(stmt).fetchall())
 wikishortnames = [n.split('/')[-1] for n in wikinames if n not in ('Loft',)]
 
 for wikititle in sorted(wikinames - SKIP):
+    #if wikititle != 'NewDeveloper': continue
     print "loading %s" % wikititle
     shortname = wikititle.split('/')[-1]
     #if wikititle == 'AssemblyDesign': import pdb; pdb.set_trace()

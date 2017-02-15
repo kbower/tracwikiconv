@@ -279,7 +279,12 @@ class WikiParser(Component):
             helpers = []
             handlers = {}
             syntax = [r for r in self._pre_rules if helper_re.search(r).group(1) in GITHUB_CONVERTED]
-            syntax.append(r"(?P<wiki_title>!?\b(?:" + '|'.join(wiki_titles) + r")\b)")
+            wikitoken_re = r"\b(?:" + '|'.join(wiki_titles) + r")\b"
+            syntax.append(
+                r"(?P<brace_wiki>!?\[(?P<bwiki_title>%s)(?P<remainder>[^\]]*)\])" % 
+                    wikitoken_re)
+            syntax.append(
+                r"(?P<wiki_title>!?%s)" % wikitoken_re)
             i = 0
             for resolver in WikiSystem(self.env).syntax_providers:
                 for regexp, handler in resolver.get_wiki_syntax() or []:

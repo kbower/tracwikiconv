@@ -605,6 +605,24 @@ class Formatter(object):
     def _revision2_formatter(self, match, fullmatch):
         return self._svn_rev(match, fullmatch.group('rev2'))
 
+    def _brace_wiki_formatter(self, match, fullmatch):
+        wikititle = fullmatch.group('bwiki_title')
+        anchor = text = None
+        rem = fullmatch.group('remainder')
+        if rem:
+            if rem[0] == '#':
+                # anchor
+                anchor, text = rem[1:].split(' ', 1)
+            else:
+                text = rem
+        if not anchor:
+            return self._wikilink(wikititle, text)
+        if wikititle == currentwiki:
+            return u"[%s](#%s)" % (text, anchor)
+        # remote wiki page with anchor
+        text = text or wikititle
+        return u"[%s](%s#%s)" % (text, wikititle, anchor)
+
     def _wiki_title_formatter(self, match, fullmatch):
         return self._wikilink(match)
 
@@ -624,8 +642,10 @@ class Formatter(object):
             return u"[%s](https://trac.retailarchitects.com/trac/wiki/%s)" % \
                 (text, wikititle)
         if text:
-            return u"[[%s|%s]]" % (text, wikititle)
-        return u"[[%s]]" % wikititle
+            retval = u"[[%s|%s]]" % (text, wikititle)
+        else:
+            retval = u"[[%s]]" % wikititle
+        return retval
 
     def _image_formatter(self, match, fullmatch):
         imagefn = fullmatch.group('imagefn').split(",", 1)[0].strip()
