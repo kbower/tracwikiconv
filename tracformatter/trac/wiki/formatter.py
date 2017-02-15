@@ -795,6 +795,11 @@ class Formatter(object):
         label = fullmatch.group('label')
         if not label:
             # don't attempt
+            if match[0] == '[' and \
+               match[-1] == ']' and \
+               target and \
+               target.startswith('//'):
+                match = match[1:-1]
             return match
         return u"[%s](%s)" % (label,
             match[1:match.index(label)].strip())
