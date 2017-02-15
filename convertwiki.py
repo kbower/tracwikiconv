@@ -6,6 +6,17 @@ GITPATH = "/home/kent/loft"
 TRACDB = "/home/kent/tracdb/trac.db"
 OUTPUTDIR = "/home/kent/loft.wiki"
 ATTACH = u"""* [{filename}]({link})"""
+SKIP = set([
+    'PasswordDatabase',
+    'ElDoradoInfo',
+    'IvanSmithInfo',
+    'KanesInfo',
+    'LevinInfo',
+    'MiskellyInfo',
+    'MorrisInfo',
+    'SlumberlandInfo',
+    'SteinhafelsInfo',
+])
 
 engine = create_engine('sqlite:///%s' % TRACDB, echo=True and False)
 metadata = MetaData(engine)
@@ -13,10 +24,6 @@ metadata.reflect()
 wiki_table = metadata.tables['wiki']
 att_table = metadata.tables['attachment']
 
-
-def _convertWikiToMd(txt, currentticket):
-    from trac.wiki.formatter import trac_to_github
-    return trac_to_github(txt, _gitpath, currentticket)
 
 def add_attachments_section(wikititle, shortname, page):
     """
@@ -46,7 +53,7 @@ stmt = select([distinct(wiki_table.c.name)]).where(wiki_table.c.author != 'trac'
 wikinames = set(r.name for r in engine.execute(stmt).fetchall())
 wikishortnames = [n.split('/')[-1] for n in wikinames]
 
-for wikititle in sorted(wikinames - set('PasswordDatabase')):
+for wikititle in sorted(wikinames - SKIP):
     print "loading %s" % wikititle
     shortname = wikititle.split('/')[-1]
     #if wikititle == 'AssemblyDesign': import pdb; pdb.set_trace()
@@ -59,7 +66,7 @@ for wikititle in sorted(wikinames - set('PasswordDatabase')):
         .order_by(desc(wiki_table.c.version))\
         .limit(1)
     txt = engine.execute(stmt).scalar()
-    txt = trac_to_github(txt, shortname, wikishortnames, GITPATH)
+    txt = trac_to_github(txt, shortname, wikishortnames, GITPATH, SKIP)
     txt += add_attachments_section(wikititle, shortname, txt)
     # Write file
     filename = "%s/%s.md" % (OUTPUTDIR, shortname)

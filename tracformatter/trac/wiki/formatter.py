@@ -45,8 +45,9 @@ __all__ = ['trac_to_github']
 _gitpath=None
 wiki_titles=None
 currentwiki=None
+skipped_wikis=None
 
-def trac_to_github(text, currentwikiname, wikinames, gitpath=None):
+def trac_to_github(text, currentwikiname, wikinames, gitpath, skippedwikis):
     global _gitpath
     if gitpath:
         _gitpath = gitpath
@@ -55,6 +56,8 @@ def trac_to_github(text, currentwikiname, wikinames, gitpath=None):
         wiki_titles = wikinames
     global currentwiki
     currentwiki = currentwikiname
+    global skipped_wikis
+    skipped_wikis = skippedwikis
     out = StringIO()
     Formatter().format(text, out, False)
     return out.getvalue()
@@ -615,7 +618,7 @@ class Formatter(object):
         return self._wikilink(title, text)
 
     def _wikilink(self, wikititle, text=None):
-        if wikititle in ('PasswordDatabase',):
+        if wikititle in skipped_wikis:
             if not text:
                 text = wikititle
             return u"[%s](https://trac.retailarchitects.com/trac/wiki/%s)" % \
